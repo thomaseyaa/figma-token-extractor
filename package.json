@@ -13,6 +13,9 @@
     "extract"
   ],
   "license": "MIT",
+  "dependencies": {
+    "commander": "12.1.0"
+  },
   "devDependencies": {
     "@types/node": "22.9.0",
     "tsx": "4.19.2",

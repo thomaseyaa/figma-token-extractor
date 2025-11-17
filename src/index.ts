@@ -1,31 +1,45 @@
+import { Command } from "commander";
 import { getFile, getStyles } from "./api.js";
 import { dumpJson } from "./dump.js";
+import { extractFillColors } from "./styles.js";
+import { rgbToHex } from "./color.js";
 
-// Throwaway entry point. Will replace with a proper CLI once the data shape
-// stabilises.
+const program = new Command();
 
-async function main(): Promise<void> {
-  const fileId = process.argv[2];
-  const token = process.env.FIGMA_ACCESS_TOKEN;
-  if (!fileId) {
-    console.error("usage: tsx src/index.ts <file-id>");
-    process.exit(1);
-  }
-  if (!token) {
-    console.error("FIGMA_ACCESS_TOKEN env var is required");
-    process.exit(1);
-  }
+program
+  .name("figma-token-extractor")
+  .description("Extract design tokens from a Figma file")
+  .option("--file-id <id>", "Figma file id")
+  .option("--token <token>", "Figma access token (or FIGMA_ACCESS_TOKEN env)")
+  .option("--raw", "dump the raw API responses to disk instead of extracting", false)
+  .action(async (opts) => {
+    const token = opts.token ?? process.env.FIGMA_ACCESS_TOKEN;
+    if (!opts.fileId) {
+      console.error("missing --file-id");
+      process.exit(1);
+    }
+    if (!token) {
+      console.error("missing token: pass --token or set FIGMA_ACCESS_TOKEN");
+      process.exit(1);
+    }
 
-  const file = await getFile(fileId, token);
-  dumpJson(file, "figma-file.json");
+    const file = await getFile(opts.fileId, token) as Parameters<typeof extractFillColors>[0];
 
-  const styles = await getStyles(fileId, token);
-  dumpJson(styles, "figma-styles.json");
+    if (opts.raw) {
+      dumpJson(file, "figma-file.json");
+      const styles = await getStyles(opts.fileId, token);
+      dumpJson(styles, "figma-styles.json");
+      console.log("wrote figma-file.json and figma-styles.json");
+      return;
+    }
 
-  console.log("dumped figma-file.json and figma-styles.json");
-}
+    const colors = extractFillColors(file);
+    for (const c of colors) {
+      console.log(`${c.name}\t${rgbToHex(c.r, c.g, c.b)}`);
+    }
+  });
 
-main().catch((err) => {
+program.parseAsync().catch((err) => {
   console.error(err);
   process.exit(1);
 });
