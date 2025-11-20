@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { getFile, getStyles } from "./api.js";
 import { dumpJson } from "./dump.js";
@@ -8,6 +9,7 @@ export interface CliOptions {
   fileId?: string;
   token?: string;
   raw?: boolean;
+  output?: string;
 }
 
 export function buildProgram(): Command {
@@ -18,6 +20,7 @@ export function buildProgram(): Command {
     .option("--file-id <id>", "Figma file id")
     .option("--token <token>", "Figma access token (or FIGMA_ACCESS_TOKEN env)")
     .option("--raw", "dump the raw API responses to disk", false)
+    .option("-o, --output <file>", "write tokens to <file> instead of stdout")
     .action(run);
   return program;
 }
@@ -42,7 +45,12 @@ export async function run(opts: CliOptions): Promise<void> {
   }
 
   const colors = extractFillColors(file);
-  for (const c of colors) {
-    console.log(`${c.name}\t${rgbToHex(c.r, c.g, c.b)}`);
+  const lines = colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b)}`);
+
+  if (opts.output) {
+    writeFileSync(opts.output, lines.join("\n") + "\n", "utf8");
+    console.log(`wrote ${colors.length} colors to ${opts.output}`);
+  } else {
+    for (const line of lines) console.log(line);
   }
 }
