@@ -12,6 +12,8 @@ export interface CliOptions {
   output?: string;
 }
 
+export class UsageError extends Error {}
+
 export function buildProgram(): Command {
   const program = new Command();
   program
@@ -26,12 +28,14 @@ export function buildProgram(): Command {
 }
 
 export async function run(opts: CliOptions): Promise<void> {
-  const token = opts.token ?? process.env.FIGMA_ACCESS_TOKEN;
   if (!opts.fileId) {
-    throw new Error("missing --file-id");
+    throw new UsageError("missing --file-id");
   }
+  const token = opts.token ?? process.env.FIGMA_ACCESS_TOKEN;
   if (!token) {
-    throw new Error("missing token: pass --token or set FIGMA_ACCESS_TOKEN");
+    throw new UsageError(
+      "missing Figma access token. Pass --token <t> or set FIGMA_ACCESS_TOKEN."
+    );
   }
 
   const file = await getFile(opts.fileId, token) as Parameters<typeof extractFillColors>[0];
