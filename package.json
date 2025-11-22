@@ -5,7 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
   },
   "keywords": [
     "figma",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@types/node": "22.9.0",
     "tsx": "4.19.2",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "2.1.5"
   }
 }
