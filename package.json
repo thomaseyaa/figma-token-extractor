@@ -4,6 +4,9 @@
   "description": "Extract design tokens from Figma files via the REST API",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "test": "vitest run"
