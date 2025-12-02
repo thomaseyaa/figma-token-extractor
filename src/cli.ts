@@ -4,12 +4,14 @@ import { getFile, getStyles } from "./api.js";
 import { dumpJson } from "./dump.js";
 import { extractFillColors } from "./styles.js";
 import { rgbToHex } from "./color.js";
+import { colorsToDTCG } from "./dtcg.js";
 
 export interface CliOptions {
   fileId?: string;
   token?: string;
   raw?: boolean;
   output?: string;
+  format?: "tsv" | "dtcg";
 }
 
 export class UsageError extends Error {}
@@ -23,6 +25,7 @@ export function buildProgram(): Command {
     .option("--token <token>", "Figma access token (or FIGMA_ACCESS_TOKEN env)")
     .option("--raw", "dump the raw API responses to disk", false)
     .option("-o, --output <file>", "write tokens to <file> instead of stdout")
+    .option("--format <fmt>", "output format: tsv or dtcg", "tsv")
     .action(run);
   return program;
 }
@@ -49,12 +52,15 @@ export async function run(opts: CliOptions): Promise<void> {
   }
 
   const colors = extractFillColors(file);
-  const lines = colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b)}`);
+  const output =
+    opts.format === "dtcg"
+      ? JSON.stringify(colorsToDTCG(colors), null, 2) + "\n"
+      : colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b)}`).join("\n") + "\n";
 
   if (opts.output) {
-    writeFileSync(opts.output, lines.join("\n") + "\n", "utf8");
+    writeFileSync(opts.output, output, "utf8");
     console.log(`wrote ${colors.length} colors to ${opts.output}`);
   } else {
-    for (const line of lines) console.log(line);
+    process.stdout.write(output);
   }
 }
