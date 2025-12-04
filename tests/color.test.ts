@@ -17,4 +17,12 @@ describe("rgbToHex", () => {
   it("clamps out of range values", () => {
     expect(rgbToHex(1.5, -0.1, 0)).toBe("#FF0000");
   });
+
+  it("appends alpha byte when alpha < 1", () => {
+    expect(rgbToHex(0, 0, 0, 0.5)).toBe("#00000080");
+  });
+
+  it("omits alpha byte when alpha is 1", () => {
+    expect(rgbToHex(1, 1, 1, 1)).toBe("#FFFFFF");
+  });
 });

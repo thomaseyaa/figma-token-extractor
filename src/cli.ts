@@ -55,7 +55,7 @@ export async function run(opts: CliOptions): Promise<void> {
   const output =
     opts.format === "dtcg"
       ? JSON.stringify(colorsToDTCG(colors), null, 2) + "\n"
-      : colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b)}`).join("\n") + "\n";
+      : colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b, c.a)}`).join("\n") + "\n";
 
   if (opts.output) {
     writeFileSync(opts.output, output, "utf8");

@@ -1,8 +1,5 @@
 // WIP: convert our extracted Figma colours into something resembling the
 // Design Tokens Community Group format (https://tr.designtokens.org/format/).
-//
-// Right now this only handles colour tokens, and the grouping logic is very
-// rough — names with slashes become nested groups.
 
 import type { RawColor } from "./styles.js";
 import { rgbToHex } from "./color.js";
@@ -18,7 +15,7 @@ export function colorsToDTCG(colors: RawColor[]): DTCGGroup {
   const root: DTCGGroup = {};
   for (const c of colors) {
     const path = c.name.split("/").map(slug);
-    place(root, path, { $value: rgbToHex(c.r, c.g, c.b), $type: "color" });
+    place(root, path, { $value: rgbToHex(c.r, c.g, c.b, c.a), $type: "color" });
   }
   return root;
 }
