@@ -1,10 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import { getFile, getStyles } from "./api.js";
+import { getFile, getStyles, getVariables } from "./api.js";
 import { dumpJson } from "./dump.js";
 import { extractFillColors } from "./styles.js";
 import { rgbToHex } from "./color.js";
 import { colorsToDTCG } from "./dtcg.js";
+import { variablesToDTCG, type FigmaVariablesPayload } from "./variables.js";
 
 export interface CliOptions {
   fileId?: string;
@@ -12,6 +13,7 @@ export interface CliOptions {
   raw?: boolean;
   output?: string;
   format?: "tsv" | "dtcg";
+  source?: "styles" | "variables";
 }
 
 export class UsageError extends Error {}
@@ -26,6 +28,11 @@ export function buildProgram(): Command {
     .option("--raw", "dump the raw API responses to disk", false)
     .option("-o, --output <file>", "write tokens to <file> instead of stdout")
     .option("--format <fmt>", "output format: tsv or dtcg", "tsv")
+    .option(
+      "--source <src>",
+      "where to read tokens from: styles or variables (Enterprise)",
+      "styles"
+    )
     .action(run);
   return program;
 }
@@ -41,9 +48,8 @@ export async function run(opts: CliOptions): Promise<void> {
     );
   }
 
-  const file = await getFile(opts.fileId, token) as Parameters<typeof extractFillColors>[0];
-
   if (opts.raw) {
+    const file = await getFile(opts.fileId, token);
     dumpJson(file, "figma-file.json");
     const styles = await getStyles(opts.fileId, token);
     dumpJson(styles, "figma-styles.json");
@@ -51,16 +57,26 @@ export async function run(opts: CliOptions): Promise<void> {
     return;
   }
 
-  const colors = extractFillColors(file);
-  const output =
-    opts.format === "dtcg"
-      ? JSON.stringify(colorsToDTCG(colors), null, 2) + "\n"
-      : colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b, c.a)}`).join("\n") + "\n";
+  const source = opts.source ?? "styles";
+  let payload: string;
+
+  if (source === "variables") {
+    const vars = (await getVariables(opts.fileId, token)) as FigmaVariablesPayload;
+    const dtcg = variablesToDTCG(vars);
+    payload = JSON.stringify(dtcg, null, 2) + "\n";
+  } else {
+    const file = (await getFile(opts.fileId, token)) as Parameters<typeof extractFillColors>[0];
+    const colors = extractFillColors(file);
+    payload =
+      opts.format === "dtcg"
+        ? JSON.stringify(colorsToDTCG(colors), null, 2) + "\n"
+        : colors.map((c) => `${c.name}\t${rgbToHex(c.r, c.g, c.b, c.a)}`).join("\n") + "\n";
+  }
 
   if (opts.output) {
-    writeFileSync(opts.output, output, "utf8");
-    console.log(`wrote ${colors.length} colors to ${opts.output}`);
+    writeFileSync(opts.output, payload, "utf8");
+    console.log(`wrote ${opts.output}`);
   } else {
-    process.stdout.write(output);
+    process.stdout.write(payload);
   }
 }
