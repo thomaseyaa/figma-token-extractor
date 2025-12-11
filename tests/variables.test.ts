@@ -68,4 +68,36 @@ describe("variablesToDTCG", () => {
     });
     expect(Object.keys(out)).toHaveLength(0);
   });
+
+  it("skips variables with an empty valuesByMode", () => {
+    const out = variablesToDTCG({
+      meta: {
+        variables: {
+          "v5": {
+            id: "v5",
+            name: "unset",
+            resolvedType: "COLOR",
+            valuesByMode: {},
+          },
+        },
+      },
+    });
+    expect(Object.keys(out)).toHaveLength(0);
+  });
+
+  it("skips variables with a blank name", () => {
+    const out = variablesToDTCG({
+      meta: {
+        variables: {
+          "v6": {
+            id: "v6",
+            name: "  /  ",
+            resolvedType: "FLOAT",
+            valuesByMode: { "1:0": 1 },
+          },
+        },
+      },
+    });
+    expect(Object.keys(out)).toHaveLength(0);
+  });
 });

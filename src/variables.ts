@@ -40,13 +40,18 @@ export function variablesToDTCG(payload: FigmaVariablesPayload): DTCGGroup {
   const vars = Object.values(payload.meta?.variables ?? {});
 
   for (const v of vars) {
+    if (!v?.name || !v?.resolvedType) continue;
+    if (!v.valuesByMode || typeof v.valuesByMode !== "object") continue;
+
     const value = firstValue(v.valuesByMode);
     if (value === undefined || value === null) continue;
 
     const token = toToken(v.resolvedType, value);
     if (!token) continue;
 
-    const path = v.name.split("/").map(slug);
+    const path = v.name.split("/").map(slug).filter(Boolean);
+    if (path.length === 0) continue;
+
     place(root, path, token);
   }
 
