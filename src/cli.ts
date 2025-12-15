@@ -37,6 +37,17 @@ export function buildProgram(): Command {
   return program;
 }
 
+function countTokens(group: Record<string, unknown>): number {
+  let n = 0;
+  for (const v of Object.values(group)) {
+    if (v && typeof v === "object") {
+      if ("$value" in v) n++;
+      else n += countTokens(v as Record<string, unknown>);
+    }
+  }
+  return n;
+}
+
 export async function run(opts: CliOptions): Promise<void> {
   if (!opts.fileId) {
     throw new UsageError("missing --file-id");
@@ -59,14 +70,25 @@ export async function run(opts: CliOptions): Promise<void> {
 
   const source = opts.source ?? "styles";
   let payload: string;
+  let count: number;
 
   if (source === "variables") {
     const vars = (await getVariables(opts.fileId, token)) as FigmaVariablesPayload;
     const dtcg = variablesToDTCG(vars);
+    count = countTokens(dtcg);
+    if (count === 0) {
+      console.error(
+        "warning: no usable variables found. Does this file have Variables? Are they shared with your token?"
+      );
+    }
     payload = JSON.stringify(dtcg, null, 2) + "\n";
   } else {
     const file = (await getFile(opts.fileId, token)) as Parameters<typeof extractFillColors>[0];
     const colors = extractFillColors(file);
+    count = colors.length;
+    if (count === 0) {
+      console.error("warning: no Local fill styles found in this file.");
+    }
     payload =
       opts.format === "dtcg"
         ? JSON.stringify(colorsToDTCG(colors), null, 2) + "\n"
@@ -75,7 +97,7 @@ export async function run(opts: CliOptions): Promise<void> {
 
   if (opts.output) {
     writeFileSync(opts.output, payload, "utf8");
-    console.log(`wrote ${opts.output}`);
+    console.log(`wrote ${count} tokens to ${opts.output}`);
   } else {
     process.stdout.write(payload);
   }
