@@ -9,12 +9,15 @@
   },
   "scripts": {
     "dev": "tsx src/index.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "figma",
     "design-tokens",
-    "extract"
+    "extract",
+    "dtcg"
   ],
   "license": "MIT",
   "dependencies": {
