@@ -1,28 +1,57 @@
-// Minimal Figma REST API client.
-// Docs: https://www.figma.com/developers/api
+const FIGMA_API = "https://api.figma.com/v1";
 
-const FIGMA_API_BASE = "https://api.figma.com/v1";
-
-export async function getFile(fileId: string, token: string): Promise<unknown> {
-  return getJson(`/files/${fileId}`, token);
+export interface FigmaVariable {
+  id: string;
+  name: string;
+  resolvedType: "COLOR" | "FLOAT" | "STRING" | "BOOLEAN";
+  valuesByMode: Record<string, unknown>;
 }
 
-export async function getStyles(fileId: string, token: string): Promise<unknown> {
-  return getJson(`/files/${fileId}/styles`, token);
+export interface FigmaVariableCollection {
+  id: string;
+  name: string;
+  variableIds: string[];
 }
 
-// Figma Variables REST API. Enterprise / Enterprise+ plans only — other
-// plans return 403. See https://www.figma.com/developers/api#variables.
-export async function getVariables(fileId: string, token: string): Promise<unknown> {
-  return getJson(`/files/${fileId}/variables/local`, token);
+export interface FigmaVariablesResponse {
+  meta: {
+    variables: Record<string, FigmaVariable>;
+    variableCollections: Record<string, FigmaVariableCollection>;
+  };
 }
 
-async function getJson(path: string, token: string): Promise<unknown> {
-  const res = await fetch(`${FIGMA_API_BASE}${path}`, {
+export interface FigmaStyle {
+  key: string;
+  name: string;
+  style_type: "FILL" | "TEXT" | "EFFECT" | "GRID";
+  description: string;
+}
+
+export interface FigmaStylesResponse {
+  meta: {
+    styles: FigmaStyle[];
+  };
+}
+
+export interface FigmaColor {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
+export async function fetchVariables(fileId: string, token: string): Promise<FigmaVariablesResponse> {
+  const res = await fetch(`${FIGMA_API}/files/${fileId}/variables/local`, {
     headers: { "X-Figma-Token": token },
   });
-  if (!res.ok) {
-    throw new Error(`Figma API ${res.status}: ${res.statusText}`);
-  }
-  return res.json();
+  if (!res.ok) throw new Error(`Figma API error: ${res.status} ${res.statusText}`);
+  return res.json() as Promise<FigmaVariablesResponse>;
+}
+
+export async function fetchStyles(fileId: string, token: string): Promise<FigmaStylesResponse> {
+  const res = await fetch(`${FIGMA_API}/files/${fileId}/styles`, {
+    headers: { "X-Figma-Token": token },
+  });
+  if (!res.ok) throw new Error(`Figma API error: ${res.status} ${res.statusText}`);
+  return res.json() as Promise<FigmaStylesResponse>;
 }
