@@ -1,32 +1,33 @@
 {
   "name": "figma-token-extractor",
-  "version": "0.0.1",
-  "description": "Extract design tokens from Figma files via the REST API",
+  "version": "0.1.0",
+  "description": "Extract design tokens from Figma and output DTCG JSON",
   "type": "module",
-  "private": true,
-  "engines": {
-    "node": ">=20"
+  "main": "dist/index.js",
+  "bin": {
+    "figma-token-extractor": "dist/index.js"
   },
   "scripts": {
+    "build": "tsc",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "test:watch": "vitest"
   },
   "keywords": [
     "figma",
     "design-tokens",
+    "dtcg",
     "extract",
-    "dtcg"
+    "design-system"
   ],
   "license": "MIT",
   "dependencies": {
-    "commander": "12.1.0"
+    "commander": "^13.0.0"
   },
   "devDependencies": {
-    "@types/node": "22.9.0",
-    "tsx": "4.19.2",
-    "typescript": "5.6.3",
-    "vitest": "2.1.5"
+    "@types/node": "^25.6.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   }
 }
