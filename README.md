@@ -1,58 +1,61 @@
 # figma-token-extractor
 
-Pulls design tokens out of a Figma file via the REST API. Two sources are
-supported:
+Extract design tokens from a Figma file via the REST API and output them in DTCG JSON format (W3C standard).
 
-- `--source styles` (default) — walks the file payload and pulls solid fill
-  colours linked to a Figma "Local style". Works on any plan.
-- `--source variables` — calls the Figma Variables REST API. Maps each
-  variable to a DTCG token. **Only available on Enterprise / Enterprise+
-  plans.** Lower plans get a `403`.
-
-Output format is `tsv` (one `name<TAB>#HEX` per line) or `dtcg` (W3C Design
-Tokens Community Group JSON).
+> **Important:** This tool uses the Figma Variables REST API (`/v1/files/:id/variables/local`), which is only available on **Enterprise and Enterprise+** plans. For other plans, consider using the Figma Plugin API (`figma.variables.getLocalVariables()`) via a custom plugin.
 
 ## Usage
 
 ```bash
-export FIGMA_ACCESS_TOKEN=figd_xxx
+# Print tokens to stdout
+npx figma-token-extractor --file-id YOUR_FILE_ID --token YOUR_FIGMA_TOKEN
 
-# Default: extract fill colours and print TSV
-npm run dev -- --file-id <file-id>
+# Write to file
+npx figma-token-extractor --file-id YOUR_FILE_ID --token YOUR_FIGMA_TOKEN -o tokens.json
 
-# DTCG output, written to a file
-npm run dev -- --file-id <file-id> --format dtcg -o tokens.json
-
-# Use Figma Variables (Enterprise+ only)
-npm run dev -- --file-id <file-id> --source variables -o tokens.json
-
-# Dump the raw REST responses for debugging
-npm run dev -- --file-id <file-id> --raw
+# Using an environment variable for the token
+export FIGMA_ACCESS_TOKEN=your_token_here
+npx figma-token-extractor --file-id YOUR_FILE_ID -o tokens.json
 ```
 
-## DTCG output
+## What It Extracts
 
-The DTCG output groups tokens by slash-separated names. A variable named
-`brand/primary` with value `r:0.2 g:0.4 b:0.8` becomes:
+| Figma Variable Type | DTCG Token Type |
+|---|---|
+| Color | `color` (`#hex`) |
+| Number (Float) | `dimension` (`Npx`) |
+| String | `fontFamily` |
+
+## Output Format (DTCG)
 
 ```json
 {
-  "brand": {
-    "primary": { "$value": "#3366CC", "$type": "color" }
+  "color": {
+    "primary": { "$value": "#3B82F6", "$type": "color" },
+    "secondary": { "$value": "#6366F1", "$type": "color" }
+  },
+  "spacing": {
+    "sm": { "$value": "8px", "$type": "dimension" },
+    "md": { "$value": "16px", "$type": "dimension" }
+  },
+  "typography": {
+    "heading": {
+      "font-family": { "$value": "Inter", "$type": "fontFamily" }
+    }
   }
 }
 ```
 
-Supported variable types:
+## Getting Your Figma Token
 
-| Figma type | DTCG `$type`  | Value shape |
-|------------|---------------|-------------|
-| COLOR      | `color`       | `#RRGGBB` or `#RRGGBBAA` |
-| FLOAT      | `dimension`   | `Npx` |
-| STRING     | `string`      | as-is |
-| BOOLEAN    | (skipped)     | — |
+1. Go to Figma → Settings → Personal access tokens
+2. Generate a new token
+3. Pass it via `--token` or set the `FIGMA_ACCESS_TOKEN` environment variable
 
-## Status
+## Getting the File ID
 
-POC. The DTCG mapping is incomplete (no aliases, no per-mode resolution, no
-typography composite). Issues welcome.
+From your Figma URL: `https://www.figma.com/file/ABC123/...` → the file ID is `ABC123`
+
+## License
+
+MIT
